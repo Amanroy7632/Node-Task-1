@@ -1,2 +1,4 @@
 const authController = require("./Auth.js")
-module.exports={authController}
+const postController = require("./post.controller.js")
+const commentController = require("./comment.controller.js")
+module.exports={authController,postController,commentController}

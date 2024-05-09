@@ -1,2 +1,3 @@
 const authRoute = require("./auth.js")
-module.exports={authRoute}
+const postRoute= require("./post.routes.js")
+module.exports={authRoute,postRoute}

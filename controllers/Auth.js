@@ -2,6 +2,20 @@ const ApiError =require("../utils/ApiError.js")
 const ApiResponse = require("../utils/ApiResponse.js")
 const User = require("../models/User.js")
 const generateCode = require("../utils/generateCode.js")
+const generateAccessTokenAndRefreshToken= async (userId)=>{
+try {
+  const user = await User.findById(userId)
+  // console.log(user);
+  const accessToken = await user.generateAccessToken()
+  const refreshToken = await user.generateRefreshToken()
+  // console.log(`Access token : ${accessToken}`);
+  user.refreshToken =refreshToken
+  await user.save({validateBeforeSave:false})
+  return {accessToken,refreshToken}
+} catch (error) {
+  throw new ApiError(500,`Failed to generate token:${error.message}`)
+}
+}
 const signup = async (req,res,next)=>{
     try {
         const {name,username,email,password}=req.body
@@ -25,9 +39,12 @@ const signup = async (req,res,next)=>{
             throw new ApiError(400,"User already registered")
         }
         // const hashedPassword=await hashPassword(password)
-        const newUser =new User({name,username,email,password})
-        const result=await newUser.save()
-        res.send(new ApiResponse(201,result,"User Created Successfully"))
+         const newUser = await User.create({
+          name,username,email,password
+         })
+        // const newUser =new User({name,username,email,password})
+        // const result=await newUser.save()
+        res.send(new ApiResponse(201,{user:newUser},"User Created Successfully"))
       } catch (error) {
         console.log(error.message);
         // throw new ApiError(400,"User Already Registered")
@@ -52,11 +69,22 @@ const signin= async(req,res,next)=>{
     //     throw new ApiError(401,"Wrong password")
     //   }
     //   const token=generateToken(user)
-      res.send(new ApiResponse(200,{user},"User signed in successfully"))
+      const {accessToken,refreshToken} = await generateAccessTokenAndRefreshToken(user._id)
+      //  console.log(`${accessToken} refresh --> ${refreshToken}`);
+      const loggedinUser = await User.findById(user._id).select("-password -refreshToken")
+      const options = {
+        httpOnly:true,
+        secure:true
+      }
+      return res.status(200).cookie("accessToken",accessToken,options)
+      .cookie("refreshToken",refreshToken)
+      .json(
+        new ApiResponse(200,{user:loggedinUser,accessToken,refreshToken},"User signed in successfully")
+      )
     } catch (error) {
       next(error)
     }
-  } 
+} 
   const forgetPasswordCode=async (req,res,next)=>{
     try {
       const {email,password}=req.body
@@ -72,7 +100,7 @@ const signin= async(req,res,next)=>{
     } catch (error) {
       next(error)
     }
-  }
+}
   const resetPassword=async (req,res,next)=>{
     try {
       const {email,code,newPassword}=req.body
@@ -91,5 +119,5 @@ const signin= async(req,res,next)=>{
     } catch (error) {
       next(error)
     }
-  }
+}
 module.exports ={signup,signin,forgetPasswordCode,resetPassword}
