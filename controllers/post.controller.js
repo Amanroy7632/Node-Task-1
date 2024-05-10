@@ -3,7 +3,7 @@ const { Post, User,Like,Comment } = require("../models/index.js");
 // const ApiResponse = require("../utils/ApiResponse.js");
 const { ApiError, ApiResponse } = require("../utils/index.js");
 const { uploadOnCloudinary } = require("../utils/cloudinary.js");
-const { default: mongoose, deleteModel } = require("mongoose");
+// const { default: mongoose, deleteModel } = require("mongoose");
 // TODO: CRUD Operation on posts 
 const createPost = async (req, res, next) => {
     try {
@@ -23,18 +23,18 @@ const createPost = async (req, res, next) => {
         if (!loggedInUser) {
             throw new ApiError(401, "Unauthorized access")
         }
-        // const response = await uploadOnCloudinary(postLocalFilePath)
-        // console.log(`Response url : ${response.url}`);
+        const response = await uploadOnCloudinary(postLocalFilePath)
+        console.log(`Response url : ${response?.url}`);
         
         
-        const uploadedFileResponse = await uploadOnCloudinary(postLocalFilePath)
+        // const uploadedFileResponse = await uploadOnCloudinary(postLocalFilePath);
         // if (!uploadedFileResponse?.url) {
         //     res.status(500)
         //     throw new ApiError(500, "Something went wrong while uploading media files")
         // }
-        console.log(`Upload response : ${uploadedFileResponse}`);
+        console.log(`Upload response : ${response}`);
         const post = await Post.create({
-            postFile: uploadedFileResponse?uploadedFileResponse.url:" not uploaded yet",
+            postFile: response?response.url:" not uploaded yet",
             title,
             isPublic,
             description:description?description:"",
@@ -48,16 +48,47 @@ const createPost = async (req, res, next) => {
         next(error)
     }
 }
-const getPosts = async (req, res,next) => {
+const getAllPosts = async (req, res,next) => {
     try {
         const user =req.user
-        const posts = await Post.find({owner:user?._id})
-        console.log(posts);
+        // const posts = await Post.find({owner:user?._id})
+        // console.log(posts);
+        const posts = await Post.aggregate([
+            {
+                $match:{
+                    owner:user?._id
+                }
+            },
+            {
+               $lookup:{
+                from:"comments",
+                localField:"_id",
+                foreignField:"postFile",
+                as:"commentators"
+               }
+            },
+            {
+                $addFields:{
+                    totalComments:{
+                        $size:"$commentators"
+                    }
+                }
+            },
+            // {
+            //     $project:{
+                   
+            //     }
+            // }
+        ])
+        console.log(posts.length);
+        console.log(user._id);
+        // console.log(`Size: ${result.length}`);
         res.status(200).json(new ApiResponse(200, {posts,totalPost:posts.length},"All posts fetched successfully"))
     } catch (error) {
        next(error)
     }
 }
+
 const updatePost=async (req,res,next)=>{
     try {
         const {id} =req.query
@@ -97,4 +128,4 @@ const deletePost=async (req,res,next)=>{
         next(error)
     }
 }
-module.exports = { createPost,getPosts ,updatePost,deletePost}
+module.exports = { createPost,getAllPosts ,updatePost,deletePost}

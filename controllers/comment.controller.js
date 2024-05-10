@@ -1,4 +1,5 @@
 const { ObjectId } = require("mongoose")
+const mongoose = require("mongoose")
 const { Comment, Post, User } = require("../models/index.js")
 const { ApiError, ApiResponse, ErrorHandler } = require("../utils/index.js")
 // TODO:  CRUD Operation on comments 
@@ -13,10 +14,43 @@ const getPostComments = async (req, res,next) => {
         if (!postId) {
             throw new ApiError(404,"Post id is required")
         }
-        const post = await Post.findById(postId).select("-owner -updatedAt -isPublic -_id -postFile -likeCount -comments")
-        // console.log(post);
-        const comments = await Comment.find({postFle:postId}).skip(page-1).limit(limit).sort({updatedAt:-1}).select("-_id -postFile -owner -createdAt")
-        console.log(comments.length);
+        const post = await Post.findById(postId).select("-owner -updatedAt -isPublic -postFile -likeCount -comments")
+        console.log(postId);
+        const comments = await Comment.find({postFle:postId}).skip(page-1).limit(limit).sort({updatedAt:-1}).select("-_id -postFile -createdAt -updatedAt")
+        const result = await Post.aggregate([
+            {
+                $match:{
+                    _id:new mongoose.Types.ObjectId(postId)
+                }
+            },
+            {
+                $lookup:{
+                    from:"comments",
+                    localField:"_id",
+                    foreignField:"postFle",
+                    as:"totalComments"
+                }
+            },
+            {
+                $addFields:{
+                    totalComment:{
+                        $size:"$totalComments"
+                    }
+                }
+            },
+            {
+                $project:{
+                    _id:0,
+                    title:1,
+                    description:1,
+                    totalComments:1,
+                    totalComment:1,
+                    // "totalComments.owner":0
+                }
+            }
+        ])
+        console.log(result);
+        // console.log(comments.length);
         // const allDetail = await User.aggregate(
         //     [
         //         {
@@ -52,7 +86,7 @@ const getPostComments = async (req, res,next) => {
         //     ]
         // )
         // console.log(allDetail[0]);
-        res.status(200).json(new ApiResponse(200,{post,comments,totalComments:comments.length},"Comments are fetched successfully"))
+        res.status(200).json(new ApiResponse(200,result[0],"Comments are fetched successfully"))
     } catch (error) {
         next(error)
     }

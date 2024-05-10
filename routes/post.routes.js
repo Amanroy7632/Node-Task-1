@@ -3,7 +3,7 @@ const { postController,commentController } = require('../controllers');
 const {authMiddleware,upload} = require("../middlewares/index.js")
 const router = express.Router()
 router.post("/create-post",authMiddleware,upload.single("avatar"),postController.createPost)
-router.get("/get-all-post",authMiddleware,postController.getPosts)
+router.get("/get-all-post",authMiddleware,postController.getAllPosts)
 router.patch("/update-post",authMiddleware,postController.updatePost)
 router.delete("/delete-post",authMiddleware,postController.deletePost)
 // CRUD Operation for comments 

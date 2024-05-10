@@ -120,4 +120,62 @@ const signin= async(req,res,next)=>{
       next(error)
     }
 }
-module.exports ={signup,signin,forgetPasswordCode,resetPassword}
+const getUserProfile = async(req,res,next)=>{
+  try {
+    const user = req.user
+    if (!user) {
+      throw new ApiError(404,"User id is required")
+    }
+    const currUser = await User.findById(user?._id)
+    if (!currUser) {
+      throw new ApiError(400,"User not found")
+    }
+    const profile = await User.aggregate([
+      {
+        $match:{
+          _id:user?._id
+        }
+      },
+      {
+        $lookup:{
+          from:"posts",
+          localField:"_id",
+          foreignField:"owner",
+          as:"totalPost", 
+        }
+      },
+      {
+        $lookup:{
+          from:"comments",
+          localField:"_id",
+          foreignField:"owner",
+          as:"totalComment",
+        }
+      },
+      {
+        $addFields:{
+          countPost:{
+            $size:"$totalPost"
+          },
+          totalCommentMade:{
+            $size:"$totalComment"
+          }
+        }
+      },
+      {
+        $project:{
+          _id:0,
+          name:1,
+          username:1,
+          email:1,
+          countPost:1,
+          totalCommentMade:1
+        }
+      }
+    ])
+    res.status(200).json(new ApiResponse(200,profile[0],"User profile fetched successfully"))
+  } catch (error) {
+    next(error)
+  }
+}
+module.exports ={signup,signin,forgetPasswordCode,resetPassword,getUserProfile}
