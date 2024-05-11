@@ -14,9 +14,9 @@ const getPostComments = async (req, res,next) => {
         if (!postId) {
             throw new ApiError(404,"Post id is required")
         }
-        const post = await Post.findById(postId).select("-owner -updatedAt -isPublic -postFile -likeCount -comments")
+        const post = await Post.findById(postId).select("-owner -updatedAt -isPublic -post -likeCount -comments")
         console.log(postId);
-        const comments = await Comment.find({postFle:postId}).skip(page-1).limit(limit).sort({updatedAt:-1}).select("-_id -postFile -createdAt -updatedAt")
+        const comments = await Comment.find({post:postId}).skip(page-1).limit(limit).sort({updatedAt:-1}).select("-_id -post -createdAt -updatedAt")
         const result = await Post.aggregate([
             {
                 $match:{
@@ -27,7 +27,7 @@ const getPostComments = async (req, res,next) => {
                 $lookup:{
                     from:"comments",
                     localField:"_id",
-                    foreignField:"postFle",
+                    foreignField:"post",
                     as:"totalComments"
                 }
             },
@@ -61,7 +61,7 @@ const getPostComments = async (req, res,next) => {
         //         {
         //             $lookup:{
         //                 from:"comments",
-        //                 localField:"postFile",
+        //                 localField:"post",
         //                 foreignField:"owner",
         //                 as :"Totalcommentator"
         //             }
@@ -110,11 +110,11 @@ const addComment = async (req, res, next) => {
         // console.log(post);
         if (!post) {
 
-            throw new ApiError(400, "Comment not found")
+            throw new ApiError(400, "Post not found")
         }
         const comment = await Comment.create({
             content,
-            postFle: post._id,
+            post: post._id,
             owner: user._id
         })
         return res.status(201).json(new ApiResponse(200, comment, "Your comment has been added to this post"))

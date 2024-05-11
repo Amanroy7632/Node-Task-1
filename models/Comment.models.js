@@ -5,7 +5,7 @@ const commentSchema = new mongoose.Schema(
             type: String,
             required: true
         },
-        postFle: {
+        post: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "Post"
         },

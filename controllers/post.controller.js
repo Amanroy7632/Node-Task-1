@@ -63,22 +63,40 @@ const getAllPosts = async (req, res,next) => {
                $lookup:{
                 from:"comments",
                 localField:"_id",
-                foreignField:"postFile",
+                foreignField:"post",
                 as:"commentators"
                }
+            },
+            {
+             $lookup:{
+                from:"likes",
+                localField:"_id",
+                foreignField:"post",
+                as:"totalLikes"
+             }
             },
             {
                 $addFields:{
                     totalComments:{
                         $size:"$commentators"
+                    },
+                    totalLike:{
+                        $size:"$totalLikes"
                     }
+
                 }
             },
-            // {
-            //     $project:{
-                   
-            //     }
-            // }
+            {
+                $project:{
+                   _id:0,
+                   postFile:1,
+                   title:1,
+                   description:1,
+                   isPublic:1,
+                   totalComments:1,
+                   totalLike:1
+                }
+            }
         ])
         console.log(posts.length);
         console.log(user._id);
