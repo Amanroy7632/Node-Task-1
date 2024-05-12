@@ -2,6 +2,8 @@ const ApiError =require("../utils/ApiError.js")
 const ApiResponse = require("../utils/ApiResponse.js")
 const User = require("../models/User.js")
 const generateCode = require("../utils/generateCode.js")
+const hashPassword = require("../utils/hashPassword.js")
+const {comparePassword} = require("../validators/index.js")
 const generateAccessTokenAndRefreshToken= async (userId)=>{
 try {
   const user = await User.findById(userId)
@@ -38,9 +40,9 @@ const signup = async (req,res,next)=>{
         if (user) {
             throw new ApiError(400,"User already registered")
         }
-        // const hashedPassword=await hashPassword(password)
+        const hashedPassword=await hashPassword(password)
          const newUser = await User.create({
-          name,username,email,password
+          name,username,email,password:hashedPassword
          })
         // const newUser =new User({name,username,email,password})
         // const result=await newUser.save()
@@ -57,17 +59,17 @@ const signin= async(req,res,next)=>{
       if(!((username || email) && password)){
         throw new ApiError(400,"Email or password is required")
       }
-    //   const hashedPassword=await hashPassword(password)
+      // const hashedPassword=await hashPassword(password)
       const user =await User.findOne({email})
       if (!user) {
         throw new ApiError(400,"User Not Found or invalid credentials")
     }
-    if (user.password!==password) {
-          throw new ApiError(400,"User Not Found or invalid credentials")
-      }
-    //   if (!await comparePassword(password,user.password)) {
-    //     throw new ApiError(401,"Wrong password")
+    // if (user.password!==password) {
+    //       throw new ApiError(400,"User Not Found or invalid credentials")
     //   }
+      if (!await comparePassword(password,user.password)) {
+        throw new ApiError(401,"Wrong password")
+      }
     //   const token=generateToken(user)
       const {accessToken,refreshToken} = await generateAccessTokenAndRefreshToken(user._id)
       //  console.log(`${accessToken} refresh --> ${refreshToken}`);
@@ -79,7 +81,7 @@ const signin= async(req,res,next)=>{
       return res.status(200).cookie("accessToken",accessToken,options)
       .cookie("refreshToken",refreshToken)
       .json(
-        new ApiResponse(200,{user:loggedinUser,accessToken,refreshToken},"User signed in successfully")
+        new ApiResponse(200,{user:loggedinUser,accessToken},"User signed in successfully")
       )
     } catch (error) {
       next(error)
@@ -153,12 +155,23 @@ const getUserProfile = async(req,res,next)=>{
         }
       },
       {
+        $lookup:{
+          from:"likes",
+          localField:"_id",
+          foreignField:"likedBy",
+          as:"likesmade"
+        }
+      },
+      {
         $addFields:{
-          countPost:{
+          post:{
             $size:"$totalPost"
           },
           totalCommentMade:{
             $size:"$totalComment"
+          },
+          totalLikesMade:{
+            $size:"$likesmade"
           }
         }
       },
@@ -168,8 +181,9 @@ const getUserProfile = async(req,res,next)=>{
           name:1,
           username:1,
           email:1,
-          countPost:1,
-          totalCommentMade:1
+          post:1,
+          totalCommentMade:1,
+          totalLikesMade:1
         }
       }
     ])

@@ -10,5 +10,5 @@ router.delete("/delete-post",authMiddleware,postController.deletePost)
 router.post("/add-comment",authMiddleware,commentController.addComment)
 router.post("/update-comment",authMiddleware,commentController.updateComment)
 router.delete("/delete-comment",authMiddleware,commentController.deleteComment)
-router.get("/all-comment",authMiddleware,commentController.getPostComments)
+router.get("/all-comment/:postId",authMiddleware,commentController.getPostComments)
 module.exports=router

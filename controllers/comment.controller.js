@@ -6,10 +6,10 @@ const { ApiError, ApiResponse, ErrorHandler } = require("../utils/index.js")
 
 const getPostComments = async (req, res,next) => {
     //TODO: get all comments for a video
-    // const { postId } = req.params
     try {
+        const { postId } = req.params
         const user =req.user;
-        const { postId } = req.body
+        // const { postId } = req.body
         const { page = 1, limit = 10 } = req.query
         if (!postId) {
             throw new ApiError(404,"Post id is required")
@@ -45,6 +45,16 @@ const getPostComments = async (req, res,next) => {
                     description:1,
                     totalComments:1,
                     totalComment:1,
+                    // totalcomment:{
+                    //     $map:{
+                    //         input:"totalComments",
+                    //         as:"comment",
+                    //         in:{
+                    //             post_id:"$$comment._id",
+                    //             title:"$$comment.eachcomment",
+                    //         }
+                    //     }
+                    // }
                     // "totalComments.owner":0
                 }
             }
