@@ -67,9 +67,9 @@ const signin= async(req,res,next)=>{
     // if (user.password!==password) {
     //       throw new ApiError(400,"User Not Found or invalid credentials")
     //   }
-      if (!await comparePassword(password,user.password)) {
-        throw new ApiError(401,"Wrong password")
-      }
+      // if (!await comparePassword(password,user.password)) {
+      //   throw new ApiError(401,"Wrong password")
+      // }
     //   const token=generateToken(user)
       const {accessToken,refreshToken} = await generateAccessTokenAndRefreshToken(user._id)
       //  console.log(`${accessToken} refresh --> ${refreshToken}`);

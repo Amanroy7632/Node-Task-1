@@ -14,5 +14,6 @@ app.use(express.json({limit:"500mb"}))
 app.use("/api/v1/auth",authRoute)
 app.use("/api/v1/user",postRoute)
 app.use("/api/v1/likes",likeRoute)
+app.use("/api/v1/post",postRoute)
 app.use(errorHandler)
 module.exports=app
