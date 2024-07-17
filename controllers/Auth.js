@@ -67,9 +67,9 @@ const signin= async(req,res,next)=>{
     // if (user.password!==password) {
     //       throw new ApiError(400,"User Not Found or invalid credentials")
     //   }
-      // if (!await comparePassword(password,user.password)) {
-      //   throw new ApiError(401,"Wrong password")
-      // }
+      if (!await comparePassword(password,user.password)) {
+        throw new ApiError(401,"Wrong password")
+      }
     //   const token=generateToken(user)
       const {accessToken,refreshToken} = await generateAccessTokenAndRefreshToken(user._id)
       //  console.log(`${accessToken} refresh --> ${refreshToken}`);
@@ -192,4 +192,25 @@ const getUserProfile = async(req,res,next)=>{
     next(error)
   }
 }
-module.exports ={signup,signin,forgetPasswordCode,resetPassword,getUserProfile}
+const logoutUser =async(req,res,next)=>{
+  try {
+    await User.findByIdAndUpdate(req.user._id,{
+      $set:{
+        refreshToken:undefined
+      }
+    },
+  {
+    new:true
+  })
+  const options ={
+    httpOnly:true,
+    secure:true
+  }
+  return res.status(200).clearCookie("accessToken",options)
+             .clearCookie("refreshToken",options)
+             .json(new ApiResponse(200,{},"User logged out"))
+  } catch (error) {
+     next(error)
+  }
+}
+module.exports ={signup,signin,forgetPasswordCode,resetPassword,getUserProfile,logoutUser}
