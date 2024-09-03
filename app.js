@@ -13,8 +13,27 @@ const app = express();
 // connectFromMongoDb().then((response)=>{
 
 // })
-app.get("/",(req,res)=>{
-    res.send( new ApiResponse(200,{blog:[{name:"John doe",age:34,gender:"male"}]},"Welcome to Blog Backend!"))
+app.get("/", (req, res) => {
+    res.send(new ApiResponse(200, {
+        auth:
+        {
+            route: "/api/v1/auth",
+            signup: "/signup",
+            signin: "/signin",
+            forgetPassword:"/forgot-password",
+            resetPassword:"/reset-password",
+            posts:"/user-posts"
+        },
+        posts:{
+            createPost:"/create-post",
+            getAllPost:"/get-all-post",
+            getSinglePost:"/get-single-post/:postId",
+            updatePost:"/update-post",
+            deletPost :"/delete-post",
+            addComent:"/add-comment",
+            andLotsMore:true
+        }
+    }, "Welcome to Blog Backend!"))
 })
 app.use(express.json({ limit: "500mb" }))
 app.use("/api/v1/auth", authRoute)
