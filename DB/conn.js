@@ -6,6 +6,7 @@ const connectFromMongoDb=async()=>{
         return response
     } catch (error) {
         console.log(`Error connecting to Mongo database: ${error.message}`);
+        return null
     }
 }
 module.exports=connectFromMongoDb
